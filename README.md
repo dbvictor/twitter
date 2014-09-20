@@ -1,4 +1,4 @@
-# Grid Image Search
+# Simple Twitter Client
 <i> Android Intro Class - Assignment 3 - Simple Twitter Client </i>
 
 ## Author
