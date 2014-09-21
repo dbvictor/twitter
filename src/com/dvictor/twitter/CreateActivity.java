@@ -2,30 +2,58 @@ package com.dvictor.twitter;
 
 import org.json.JSONObject;
 
-import com.dvictor.twitter.models.Tweet;
-import com.loopj.android.http.JsonHttpResponseHandler;
-
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.dvictor.twitter.models.Tweet;
+import com.loopj.android.http.JsonHttpResponseHandler;
 
 public class CreateActivity extends Activity {
 	private TwitterClient client;
 	private Tweet tweet;
+	// Remembered Views
+	private EditText etBody;
+	private TextView tvCharsRemaining;
+	// Constants
+	private static final int MAX_LENGTH = 140;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_create);
 		client = TwitterApp.getRestClient();
+		// Remember views for easy access later.
+		etBody           = (EditText) findViewById(R.id.etNewTweet      );
+		tvCharsRemaining = (TextView) findViewById(R.id.tvCharsRemaining);
+		tvCharsRemaining.setText(""+MAX_LENGTH+" remaining" );
+		// Setup events
+		setupTextChangeListener();
+	}
+	
+	private void setupTextChangeListener(){
+		etBody.addTextChangedListener(new TextWatcher(){
+			@Override public void beforeTextChanged(CharSequence s, int start, int count,	int after) {
+				// do nothing
+			}
+			@Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+				// do nothing
+			}
+			@Override public void afterTextChanged(Editable s) {
+				int count = etBody.getText().toString().length();
+				tvCharsRemaining.setText(""+(MAX_LENGTH-count)+" remaining" );
+			}
+		});
 	}
 	
 	public void create(View v){
-		EditText etBody = (EditText) findViewById(R.id.etNewTweet);
 		String etBodyText = etBody.getText().toString();
 		// If empty, don't allow send.
 		if((etBodyText==null)||(etBodyText.trim().length()<=0)){
