@@ -7,9 +7,12 @@ import org.json.JSONArray;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.util.Log;
@@ -22,6 +25,9 @@ import com.dvictor.twitter.models.Tweet;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 public class TimelineActivity extends Activity {
+	// Constants
+	private static final String PREF_INTERNET_ENABLED = "internetEnabled";
+	// Member Variables
 	private TwitterClient      client;
 	private ArrayList<Tweet>   tweets;
 	private TweetArrayAdapter  aTweets;
@@ -29,13 +35,15 @@ public class TimelineActivity extends Activity {
 	private long               lastItemId;
 	private boolean            internetEnabled;
 	private SwipeRefreshLayout swipeContainer;	
+	private SharedPreferences  pref;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_timeline);
 		setupSwipeContainer();
-		internetEnabled = true;
+		pref = PreferenceManager.getDefaultSharedPreferences(this);		
+		internetEnabled = pref.getBoolean(PREF_INTERNET_ENABLED, true); // Load current setting from preferences.
 		client = TwitterApp.getRestClient();
 		lastItemId = 0; // Always start from 0.
 		populateTimeline(true);
@@ -81,16 +89,33 @@ public class TimelineActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.menu_timeline, menu);
+		MenuItem internetToggle = menu.findItem(R.id.actionInternetToggle);
+		setupInternetStatus(internetToggle);
 		return true;
 	}
 
 	/** Menu selection to turn on/off internet to simulate offline. */
 	public void internetToggle(MenuItem menuItem){
 		internetEnabled = !internetEnabled;
+		setupInternetStatus(menuItem);
+		// Persist change to preferences
+		Editor prefEdit = pref.edit();
+		prefEdit.putBoolean(PREF_INTERNET_ENABLED, internetEnabled);
+		prefEdit.commit();
+		// Re-setup endless scroll if re-enabled.
+		if(internetEnabled){
+			setupEndlessScroll(); // Re-enable endless scrolling because if it hit end before, it would not try again.
+			if(tweets.size()==0) populateTimeline(true); // If no tweets so far, then the app just started and we have to re-run populate because it could have ran already and found no network.
+		}
+	}
+
+	/** Update the internet status visual indicators. */
+	public void setupInternetStatus(MenuItem menuItem){
+		// Update the menu item to show the correct toggle state.
+		// + toast just to make it clear what the current state is.
 		if(internetEnabled){
 			Toast.makeText(this, "Internet ON", Toast.LENGTH_SHORT).show();
 			menuItem.setIcon(R.drawable.ic_action_internet_off);
-			setupEndlessScroll(); // Re-enable endless scrolling because if it hit end before, it would not try again.
 		}else{
 			Toast.makeText(this, "Internet OFF", Toast.LENGTH_SHORT).show();
 			menuItem.setIcon(R.drawable.ic_action_internet_on);

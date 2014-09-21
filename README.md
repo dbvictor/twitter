@@ -29,6 +29,7 @@
   <li><b>(Optional)</b> Improve the user interface and theme the app to feel twitter branded
   <li><b>(Extra)</b> User can see an embedded media (image) within tweet detail view
   <li><b>(Extra)</b> Compose View activity is replaced with a modal overlay
+  <li><b>(My Extra)</b> Persist settings with Shared Preferences
 </ul>
 
 ## Demo
