@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.codepath.apps.restclienttemplate"
+    package="com.dvictor.twitter"
     android:versionCode="1"
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="10"
-        android:targetSdkVersion="18" />
+        android:minSdkVersion="14"
+        android:targetSdkVersion="19" />
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:name="com.codepath.apps.restclienttemplate.RestClientApp"
+        android:name=".TwitterApp"
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
@@ -25,7 +25,7 @@
             android:value="1" />
 
         <activity
-            android:name="com.codepath.apps.restclienttemplate.LoginActivity"
+            android:name=".LoginActivity"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,9 +39,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
-                    android:host="cprest"
+                    android:host="cpbasictweets"
                     android:scheme="oauth" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".TimelineActivity"
+            android:label="@string/title_activity_timeline" >
         </activity>
     </application>
 
