@@ -32,10 +32,11 @@ public class TwitterClient extends OAuthBaseClient {
 		super(context, REST_API_CLASS, REST_URL, REST_CONSUMER_KEY, REST_CONSUMER_SECRET, REST_CALLBACK_URL);
 	}
 	
-	public void getHomeTimeline(AsyncHttpResponseHandler handler){
+	public void getHomeTimeline(long lastItemId, AsyncHttpResponseHandler handler){
 		String url = getApiUrl("statuses/home_timeline.json");
 		RequestParams params = new RequestParams();
-		params.put("since_id","1");
+		if(lastItemId>0) params.put("max_id",""+(lastItemId-1)); // Subtract 1 because max id will return results inclusive of that ID, and we only want the next older ones.  Use max & subtract because we are going for older IDs.
+		params.put("count","25");
 		client.get(url, params, handler);
 	}
 

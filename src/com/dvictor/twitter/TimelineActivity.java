@@ -17,27 +17,36 @@ public class TimelineActivity extends Activity {
 	private ArrayList<Tweet>  tweets;
 	private TweetArrayAdapter aTweets;
 	private ListView		  lvTweets;
+	private long              lastItemId;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_timeline);
 		client = TwitterApp.getRestClient();
+		lastItemId = 0; // Always start from 0.
 		populateTimeline();
 		lvTweets = (ListView) findViewById(R.id.lvTweets);
 		tweets = new ArrayList<Tweet>();
 		aTweets = new TweetArrayAdapter(this, tweets);
 		lvTweets.setAdapter(aTweets);
+		lvTweets.setOnScrollListener(new EndlessScrollListener() {
+			/** The endless scroll listener will call us whenever its count says that we need more.  We don't care what page it is on, we just get more. */
+			@Override
+			public void onLoadMore(int page, int totalItemsCount) {
+				populateTimeline(); 
+			}
+		});
 	}
 	
 	public void populateTimeline(){
 		Log.d("DVDEBUG", "+ TimelineActivity.populateTimeline()");
-		final TimelineActivity parentThis = this;
-		client.getHomeTimeline(new JsonHttpResponseHandler(){
+		client.getHomeTimeline(lastItemId, new JsonHttpResponseHandler(){
 			@Override
 			public void onSuccess(JSONArray json) {
 				Log.d("json", "Home Timeline JSON: "+json.toString());
 				aTweets.addAll(Tweet.fromJSON(json));
+				lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
 			}
 			
 			@Override
