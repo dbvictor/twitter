@@ -2,24 +2,43 @@ package com.dvictor.twitter.models;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Tweet implements Serializable {
+import android.content.ClipData.Item;
+import android.widget.Toast;
+
+import com.activeandroid.Model;
+import com.activeandroid.annotation.Column;
+import com.activeandroid.annotation.Column.ForeignKeyAction;
+import com.activeandroid.annotation.Table;
+import com.activeandroid.query.Select;
+
+@Table(name = "Tweets")
+public class Tweet extends Model implements Serializable {
 	private static final long serialVersionUID = 7144327103228498679L;
-	private String body;
+	
+	@Column(name = "uid", unique = true, onUniqueConflict = Column.ConflictAction.REPLACE) // avoid duplicates
 	private long   uid;
+	
+	@Column(name = "body")
+	private String body;
+	
+	@Column(name = "createdAt")
 	private String createdAt;
+	
+	@Column(name = "user", onUpdate = ForeignKeyAction.CASCADE, onDelete = ForeignKeyAction.CASCADE)
 	private User   user;
 	
 	public static Tweet fromJSON(JSONObject json){
 		Tweet tweet = new Tweet();
 		// Extract values from JSON to populate the member variables.
 		try{
-			tweet.body      = json.getString("text");
 			tweet.uid       = json.getLong  ("id"  );
+			tweet.body      = json.getString("text");
 			tweet.createdAt = json.getString("created_at");
 			tweet.user      = User.fromJSON(json.getJSONObject("user"));
 		}catch(JSONException e){
@@ -45,14 +64,14 @@ public class Tweet implements Serializable {
 		return tweets;
 	}
 
-	public String getBody() {
-		return body;
-	}
-
 	public long getUid() {
 		return uid;
 	}
 
+	public String getBody() {
+		return body;
+	}
+	
 	public String getCreatedAt() {
 		return createdAt;
 	}
@@ -65,5 +84,18 @@ public class Tweet implements Serializable {
 	public String toString(){
 		return body+" - "+user.getScreenName();
 	}
+	
+	// ----- PERSISTENCE -----
+    public static List<Tweet> retrieveAll() {
+        // This is how you execute a query
+        List<Tweet> result = new Select()
+          .all()
+          .from(Tweet.class)
+          //.where("Category = ?", category.getId())
+          .orderBy("uid DESC")
+          .execute();
+        if(result==null) result = new ArrayList<Tweet>();
+        return result;
+    }	
 	
 }

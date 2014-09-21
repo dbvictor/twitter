@@ -1,6 +1,7 @@
 package com.dvictor.twitter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.json.JSONArray;
 
@@ -46,12 +47,12 @@ public class TimelineActivity extends Activity {
 		internetEnabled = pref.getBoolean(PREF_INTERNET_ENABLED, true); // Load current setting from preferences.
 		client = TwitterApp.getRestClient();
 		lastItemId = 0; // Always start from 0.
-		populateTimeline(true);
 		lvTweets = (ListView) findViewById(R.id.lvTweets);
 		tweets = new ArrayList<Tweet>();
 		aTweets = new TweetArrayAdapter(this, tweets);
 		lvTweets.setAdapter(aTweets);
 		setupEndlessScroll();
+		populateTimeline(true);
 	}
 	
 	/** Setup swipe down to refresh. */
@@ -152,25 +153,48 @@ public class TimelineActivity extends Activity {
 		Log.d("DVDEBUG", "+ TimelineActivity.populateTimeline()");
 		if(!isNetworkAvailable()){ // If no network, don't allow create tweet.
 			Toast.makeText(this, "Network Not Available!", Toast.LENGTH_SHORT).show();
+			if(refresh) populateTimelineOffline(refresh);
 		}else{
+			final TimelineActivity parentThis = this;
 			if(refresh) lastItemId = 0; // If told to refresh from beginning, start again from 0.
 			client.getHomeTimeline(lastItemId, new JsonHttpResponseHandler(){
 				@Override
 				public void onSuccess(JSONArray json) {
 					Log.d("json", "Home Timeline JSON: "+json.toString());
-					if(refresh) aTweets.clear(); // If told to refresh from beginning, clear existing results 
-					aTweets.addAll(Tweet.fromJSON(json));
+					if(refresh) aTweets.clear(); // If told to refresh from beginning, clear existing results
+					ArrayList<Tweet> retrievedTweets = Tweet.fromJSON(json);
+					aTweets.addAll(retrievedTweets);
 					lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
 	                // Now we call setRefreshing(false) to signal refresh has finished
 	                swipeContainer.setRefreshing(false);
+	                // Persist results we found so far.
+	                try{
+	                	for(Tweet t : retrievedTweets){
+	                		t.getUser().save();
+	                		t.save();
+	                	}
+						Log.d("persist", "Persisted Timeline Results");
+	                }catch(Exception e){
+						Log.e("error", e.toString());
+						Toast.makeText(parentThis, "PERSIST FAILED!", Toast.LENGTH_SHORT).show();
+	                }
 				}
 				@Override
 				public void onFailure(Throwable e, String s) {
-					Log.d("debug", e.toString());
-					Log.d("debug", s.toString());
+					Log.e("error", e.toString());
+					Log.e("error", s.toString());
 				}
 			});
 		}
+	}
+	
+	/** Populate the timeline based on offline content. */
+	private void populateTimelineOffline(final boolean refresh){
+		List<Tweet> retrievedTweets = Tweet.retrieveAll();
+		aTweets.addAll(retrievedTweets);
+		lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
+		Toast.makeText(this, "Offline Content: "+retrievedTweets.size(), Toast.LENGTH_SHORT).show();
+        swipeContainer.setRefreshing(false);
 	}
 	
     private Boolean isNetworkAvailable() {

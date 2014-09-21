@@ -41,8 +41,8 @@ public class TweetArrayAdapter extends ArrayAdapter<Tweet> {
 		ivProfileImage.setImageResource(android.R.color.transparent);
 		// Populate views with tweet data.
 		ImageLoader imageLoader = ImageLoader.getInstance();  // Universal loader we will use to get the image for us (asynchronously)
-		imageLoader.displayImage(tweet.getUser().getProfileImageUrl(), ivProfileImage); // Asynchronously load image using universal loader.
-		tvRealName.setText(tweet.getUser().getName());
+		imageLoader.displayImage(tweet.getUser().getImageUrl(), ivProfileImage); // Asynchronously load image using universal loader.
+		tvRealName.setText(tweet.getUser().getRealName());
 		tvUserName.setText("@"+tweet.getUser().getScreenName());
 		tvTime.setText("("+getRelativeTimeAgo(tweet.getCreatedAt())+")");
 		tvBody.setText(tweet.getBody());
