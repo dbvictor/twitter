@@ -24,11 +24,6 @@
   <li><b>(Optional)</b> User can open the twitter app offline and see last loaded tweets
     <ul><li> Tweets are persisted into sqlite and can be displayed from the local DB
     </ul>
-  <li><b>(Optional)</b> User can tap a tweet to display a "detailed" view of that tweet
-  <li><b>(Optional)</b> User can select "reply" from detail view to respond to a tweet
-  <li><b>(Optional)</b> Improve the user interface and theme the app to feel twitter branded
-  <li><b>(Extra)</b> User can see an embedded media (image) within tweet detail view
-  <li><b>(Extra)</b> Compose View activity is replaced with a modal overlay
   <li><b>(My Extra)</b> Persist settings with Shared Preferences
 </ul>
 
