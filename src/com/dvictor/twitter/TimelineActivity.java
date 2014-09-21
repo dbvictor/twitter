@@ -38,7 +38,7 @@ public class TimelineActivity extends Activity {
 		internetEnabled = true;
 		client = TwitterApp.getRestClient();
 		lastItemId = 0; // Always start from 0.
-		populateTimeline();
+		populateTimeline(true);
 		lvTweets = (ListView) findViewById(R.id.lvTweets);
 		tweets = new ArrayList<Tweet>();
 		aTweets = new TweetArrayAdapter(this, tweets);
@@ -56,7 +56,7 @@ public class TimelineActivity extends Activity {
                 // Your code to refresh the list here.
                 // Make sure you call swipeContainer.setRefreshing(false)
                 // once the network request has completed successfully.
-                fetchTimelineAsync(0);
+                populateTimeline(true); // true = start from beginning again
                 setupEndlessScroll(); // Resetup endless scroll in case it previously hit the bottom and stopped scrolling further again. 
             } 
         });
@@ -72,7 +72,7 @@ public class TimelineActivity extends Activity {
 			/** The endless scroll listener will call us whenever its count says that we need more.  We don't care what page it is on, we just get more. */
 			@Override
 			public void onLoadMore(int page, int totalItemsCount) {
-				populateTimeline(); 
+				populateTimeline(false); 
 			}
 		});
 	}
@@ -122,19 +122,23 @@ public class TimelineActivity extends Activity {
     	}
     }
 	
-	public void populateTimeline(){
+    /** Populate the timeline with more results */
+	public void populateTimeline(final boolean refresh){
 		Log.d("DVDEBUG", "+ TimelineActivity.populateTimeline()");
 		if(!isNetworkAvailable()){ // If no network, don't allow create tweet.
 			Toast.makeText(this, "Network Not Available!", Toast.LENGTH_SHORT).show();
 		}else{
+			if(refresh) lastItemId = 0; // If told to refresh from beginning, start again from 0.
 			client.getHomeTimeline(lastItemId, new JsonHttpResponseHandler(){
 				@Override
 				public void onSuccess(JSONArray json) {
 					Log.d("json", "Home Timeline JSON: "+json.toString());
+					if(refresh) aTweets.clear(); // If told to refresh from beginning, clear existing results 
 					aTweets.addAll(Tweet.fromJSON(json));
 					lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
+	                // Now we call setRefreshing(false) to signal refresh has finished
+	                swipeContainer.setRefreshing(false);
 				}
-				
 				@Override
 				public void onFailure(Throwable e, String s) {
 					Log.d("debug", e.toString());
@@ -143,27 +147,6 @@ public class TimelineActivity extends Activity {
 			});
 		}
 	}
-	
-    public void fetchTimelineAsync(int page) {
-    	final TimelineActivity parentThis = this;
-        client.getHomeTimeline(0, new JsonHttpResponseHandler() {
-            public void onSuccess(JSONArray json) {
-                // ...the data has come back, finish populating listview...
-				Log.d("json", "Home Timeline JSON: "+json.toString());
-				aTweets.clear();
-				aTweets.addAll(Tweet.fromJSON(json));
-				lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
-                // Now we call setRefreshing(false) to signal refresh has finished
-                swipeContainer.setRefreshing(false);
-                Toast.makeText(parentThis, "Refreshed", Toast.LENGTH_SHORT).show();
-            }
-
-            public void onFailure(Throwable e) {
-                Log.d("DEBUG", "Fetch timeline error: " + e.toString());
-                Toast.makeText(parentThis, "Refresh FAILED!", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
 	
     private Boolean isNetworkAvailable() {
     	if(!internetEnabled) return false; // If simulated off, make it appaer not working.
