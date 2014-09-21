@@ -54,6 +54,7 @@
         android:layout_below="@+id/tvRealName"
         android:paddingLeft="5dp"
         android:paddingRight="0dp"
+        android:autoLink="all"
         android:text="Tweet body..." />
 
 </RelativeLayout>
