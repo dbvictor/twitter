@@ -10,6 +10,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,17 +22,19 @@ import com.dvictor.twitter.models.Tweet;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 public class TimelineActivity extends Activity {
-	private TwitterClient     client;
-	private ArrayList<Tweet>  tweets;
-	private TweetArrayAdapter aTweets;
-	private ListView		  lvTweets;
-	private long              lastItemId;
-	private boolean           internetEnabled;
+	private TwitterClient      client;
+	private ArrayList<Tweet>   tweets;
+	private TweetArrayAdapter  aTweets;
+	private ListView		   lvTweets;
+	private long               lastItemId;
+	private boolean            internetEnabled;
+	private SwipeRefreshLayout swipeContainer;	
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_timeline);
+		setupSwipeContainer();
 		internetEnabled = true;
 		client = TwitterApp.getRestClient();
 		lastItemId = 0; // Always start from 0.
@@ -40,6 +44,27 @@ public class TimelineActivity extends Activity {
 		aTweets = new TweetArrayAdapter(this, tweets);
 		lvTweets.setAdapter(aTweets);
 		setupEndlessScroll();
+	}
+	
+	/** Setup swipe down to refresh. */
+	private void setupSwipeContainer(){
+        swipeContainer = (SwipeRefreshLayout) findViewById(R.id.swipeContainer);
+        // Setup refresh listener which triggers new data loading
+        swipeContainer.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                // Your code to refresh the list here.
+                // Make sure you call swipeContainer.setRefreshing(false)
+                // once the network request has completed successfully.
+                fetchTimelineAsync(0);
+                setupEndlessScroll(); // Resetup endless scroll in case it previously hit the bottom and stopped scrolling further again. 
+            } 
+        });
+        // Configure the refreshing colors
+        swipeContainer.setColorScheme(android.R.color.holo_blue_bright, 
+                android.R.color.holo_green_light, 
+                android.R.color.holo_orange_light, 
+                android.R.color.holo_red_light);		
 	}
 	
 	private void setupEndlessScroll(){
@@ -118,6 +143,27 @@ public class TimelineActivity extends Activity {
 			});
 		}
 	}
+	
+    public void fetchTimelineAsync(int page) {
+    	final TimelineActivity parentThis = this;
+        client.getHomeTimeline(0, new JsonHttpResponseHandler() {
+            public void onSuccess(JSONArray json) {
+                // ...the data has come back, finish populating listview...
+				Log.d("json", "Home Timeline JSON: "+json.toString());
+				aTweets.clear();
+				aTweets.addAll(Tweet.fromJSON(json));
+				lastItemId = tweets.get(tweets.size()-1).getUid(); // record the last item ID we've seen now, so we know where to continue off from next time.
+                // Now we call setRefreshing(false) to signal refresh has finished
+                swipeContainer.setRefreshing(false);
+                Toast.makeText(parentThis, "Refreshed", Toast.LENGTH_SHORT).show();
+            }
+
+            public void onFailure(Throwable e) {
+                Log.d("DEBUG", "Fetch timeline error: " + e.toString());
+                Toast.makeText(parentThis, "Refresh FAILED!", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 	
     private Boolean isNetworkAvailable() {
     	if(!internetEnabled) return false; // If simulated off, make it appaer not working.
